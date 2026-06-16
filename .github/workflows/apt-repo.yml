@@ -109,6 +109,20 @@ jobs:
       - name: Export public key
         run: gpg --armor --export "$KEY_ID" > repo/KEY.gpg
 
+      - name: Verify package version is new
+        run: |
+          deb_file=$(find ./deb -maxdepth 1 -name 'ratatui-todo-list_*.deb' -print -quit)
+          pkg_version=$(dpkg-deb -f "$deb_file" Version)
+          echo "New package version: $pkg_version"
+          if [ -d "repo/dists" ]; then
+            existing=$(reprepro -b repo list stable ratatui-todo-list | grep "ratatui-todo-list ${pkg_version}" || true)
+            if [ -n "$existing" ]; then
+              echo "::error::Version ${pkg_version} already exists in the APT repository."
+              echo "::error::Bump version in Cargo.toml and debian/changelog before creating a new tag."
+              exit 1
+            fi
+          fi
+
       - name: Add package to APT repository
         run: reprepro -b repo includedeb stable ./deb/ratatui-todo-list_*.deb
 
