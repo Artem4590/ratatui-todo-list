@@ -1,0 +1,122 @@
+name: APT Repository
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-deb:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: docker build -t ratatui-todo-list-deb .
+
+      - name: Extract .deb package
+        run: |
+          cid=$(docker create ratatui-todo-list-deb)
+          docker cp "$cid:/out" ./out
+          docker rm "$cid"
+          mv ./out/ratatui-todo-list_*.deb .
+          rm -rf ./out
+
+      - name: Upload .deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-package
+          path: ratatui-todo-list_*.deb
+
+  update-apt-repo:
+    runs-on: ubuntu-latest
+    needs: build-deb
+    permissions:
+      contents: write
+    steps:
+      - name: Download .deb artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: deb-package
+          path: ./deb
+
+      - name: Install reprepro and gnupg
+        run: sudo apt-get update && sudo apt-get install -y reprepro gnupg
+
+      - name: Configure GPG agent
+        run: |
+          mkdir -p ~/.gnupg
+          chmod 700 ~/.gnupg
+          echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
+          echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
+          gpgconf --kill gpg-agent || true
+
+      - name: Import GPG key
+        run: |
+          if [ -z "$GPG_PRIVATE_KEY" ]; then
+            echo "::error::APT_GPG_PRIVATE_KEY secret is required"
+            exit 1
+          fi
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --pinentry-mode loopback --import
+          key_id=$(gpg --list-secret-keys --with-colons | awk -F: '/^sec:/ {print $5; exit}')
+          echo "KEY_ID=$key_id" >> "$GITHUB_ENV"
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.APT_GPG_PRIVATE_KEY }}
+
+      - name: Cache GPG passphrase
+        run: |
+          if [ -z "$GPG_PASSPHRASE" ]; then
+            echo "No APT_GPG_PASSPHRASE set, skipping passphrase cache"
+            exit 0
+          fi
+          preset=$(command -v gpg-preset-passphrase || find /usr/lib -name gpg-preset-passphrase -print -quit)
+          if [ -z "$preset" ]; then
+            echo "::error::gpg-preset-passphrase not found"
+            exit 1
+          fi
+          keygrip=$(gpg --list-secret-keys --with-colons | awk -F: '/^grp:/ {print $10; exit}')
+          gpg-connect-agent /bye
+          echo "$GPG_PASSPHRASE" | "$preset" --preset "$keygrip"
+        env:
+          GPG_PASSPHRASE: ${{ secrets.APT_GPG_PASSPHRASE }}
+
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: gh-pages
+          path: repo
+
+      - name: Configure APT repository
+        run: |
+          mkdir -p repo/conf
+          cat > repo/conf/distributions <<EOF
+          Origin: ratatui-todo-list
+          Label: ratatui-todo-list
+          Suite: stable
+          Codename: stable
+          Architectures: amd64
+          Components: main
+          Description: APT repository for ratatui-todo-list
+          SignWith: ${{ env.KEY_ID }}
+          EOF
+
+      - name: Export public key
+        run: gpg --armor --export "$KEY_ID" > repo/KEY.gpg
+
+      - name: Add package to APT repository
+        run: reprepro -b repo includedeb stable ./deb/ratatui-todo-list_*.deb
+
+      - name: Commit and push gh-pages
+        run: |
+          cd repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "ci: update APT repository for ratatui-todo-list ${GITHUB_REF_NAME}" || true
+          git push origin gh-pages
