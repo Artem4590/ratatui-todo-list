@@ -7,16 +7,13 @@ Terminal todo-list application built with [ratatui](https://github.com/ratatui/r
 ### 1. Add the signing key
 
 ```bash
-sudo wget -qO /usr/share/keyrings/ratatui-todo-list.gpg \
-  https://<owner>.github.io/ratatui-todo-list/KEY.gpg
+sudo wget -qO /usr/share/keyrings/ratatui-todo-list.gpg https://Artem4590.github.io/ratatui-todo-list/KEY.gpg
 ```
 
 ### 2. Add the repository
 
 ```bash
-echo "deb [signed-by=/usr/share/keyrings/ratatui-todo-list.gpg] \
-  https://<owner>.github.io/ratatui-todo-list stable main" | \
-  sudo tee /etc/apt/sources.list.d/ratatui-todo-list.list
+echo "deb [signed-by=/usr/share/keyrings/ratatui-todo-list.gpg] https://Artem4590.github.io/ratatui-todo-list stable main" | sudo tee /etc/apt/sources.list.d/ratatui-todo-list.list
 ```
 
 ### 3. Install
@@ -25,8 +22,6 @@ echo "deb [signed-by=/usr/share/keyrings/ratatui-todo-list.gpg] \
 sudo apt update
 sudo apt install ratatui-todo-list
 ```
-
-Replace `<owner>` with your GitHub username or organization.
 
 ## Build from source
 
@@ -54,27 +49,50 @@ git push origin gh-pages
 
 ### Generate a GPG signing key
 
-```bash
-gpg --full-generate-key
-# Select RSA (sign only), 4096 bits, no expiration (or your choice).
-# Remember the key ID printed at the end.
-```
+1. Generate a new RSA signing key (no expiration is easiest for CI, but you can set one):
 
-Export keys:
+   ```bash
+   gpg --full-generate-key
+   ```
 
-```bash
-KEYID=YOUR_KEY_ID_HERE
-gpg --export-secret-keys --armor "$KEYID" > apt-signing-key.asc
-gpg --export "$KEYID" > KEY.gpg
-```
+   Choose:
+   - kind: `(4) RSA (sign only)`
+   - keysize: `4096`
+   - expiration: `0` (or your preferred value)
+   - name/email: any value, e.g. `ratatui-todo-list APT signing`
+   - passphrase: **leave empty** for CI, or set one and use `APT_GPG_PASSPHRASE` below
+
+2. Find the key ID:
+
+   ```bash
+   gpg --list-secret-keys --keyid-format long
+   ```
+
+   Look for a line like:
+
+   ```text
+   sec   rsa4096/ABCDEF1234567890 2026-06-16 [SC]
+   ```
+
+   The part after the slash is the key ID: `ABCDEF1234567890`.
+
+3. Export the keys:
+
+   ```bash
+   KEYID=ABCDEF1234567890
+   gpg --export-secret-keys --armor "$KEYID" > apt-signing-key.asc
+   gpg --export "$KEYID" > KEY.gpg
+   ```
 
 ### Add GitHub Secrets
 
-Go to **Settings → Secrets and variables → Actions** and add:
+Go to **Settings → Secrets and variables → Actions → New repository secret** and add three secrets:
 
-- `APT_GPG_PRIVATE_KEY`: full content of `apt-signing-key.asc`.
-- `APT_GPG_KEY_ID`: the GPG key ID (e.g., `A1B2C3D4E5F67890`).
-- `APT_GPG_PASSPHRASE`: (optional) passphrase of the private key. If set, `gpg-preset-passphrase` must be available in the runner.
+| Secret | Value |
+|---|---|
+| `APT_GPG_PRIVATE_KEY` | Copy-paste the **entire** content of `apt-signing-key.asc` (including `-----BEGIN PGP PRIVATE KEY BLOCK-----` and `-----END ...`). |
+| `APT_GPG_KEY_ID` | The key ID from step 2, e.g. `ABCDEF1234567890`. |
+| `APT_GPG_PASSPHRASE` | The passphrase you entered during key generation. **Skip this secret if the key has no passphrase.** |
 
 ### Trigger a release
 
