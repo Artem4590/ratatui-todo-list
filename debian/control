@@ -1,0 +1,14 @@
+Source: ratatui-todo-list
+Section: utils
+Priority: optional
+Maintainer: Artem <artem@example.com>
+Build-Depends: debhelper (>= 13)
+Standards-Version: 4.6.2
+Homepage: https://example.com
+Rules-Requires-Root: no
+
+Package: ratatui-todo-list
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Terminal todo-list application built with ratatui
+ A simple terminal UI todo-list using ratatui and crossterm.
