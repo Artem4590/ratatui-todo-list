@@ -1,3 +1,9 @@
+ratatui-todo-list (0.2.0-2) unstable; urgency=medium
+
+  * Rebuild against Debian Trixie.
+
+ -- Artem <artem@example.com>  Tue, 16 Jun 2026 15:11:19 +0000
+
 ratatui-todo-list (0.2.0-1) unstable; urgency=medium
 
   * Bump version to 0.2.0.
