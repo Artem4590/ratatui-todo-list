@@ -43,7 +43,7 @@ jobs:
             fi
           done
 
-          packages=$(printf '%s\n' "${changed[@]}" | jq -R . | jq -s -c .)
+          packages=$(printf '%s\n' "${changed[@]}" | jq -R . | jq -s -c 'map(select(. != ""))')
           echo "packages=$packages" >> "$GITHUB_OUTPUT"
           echo "Detected packages: $packages"
 
