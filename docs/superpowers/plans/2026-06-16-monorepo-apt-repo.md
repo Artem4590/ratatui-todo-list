@@ -4,7 +4,7 @@
 
 **Goal:** Перестроить репозиторий под монорепозиторную модель: перенести проект в `base/ratatui-todo-list/`, оставить в корне только CI/CD и документацию, реализовать общий GitHub Actions workflow для сборки изменённых пакетов и публикации общего APT-репозитория.
 
-**Architecture:** Один общий workflow с тремя job'ами: `detect-packages` (находит изменённые пакеты в `base/`), `build-packages` (matrix-сборка каждого пакета в Docker), `publish-repo` (последовательная публикация в `gh-pages` через reprepro). Публикация выполняется только на push в `main`, PR только собирает.
+**Architecture:** Один общий workflow с тремя job'ами: `detect-packages` (находит все директории с `debian/` и проверяет изменения внутри них), `build-packages` (matrix-сборка каждого пакета в Docker), `publish-repo` (последовательная публикация в `gh-pages` через reprepro). Публикация выполняется только на push в `main`, PR только собирает.
 
 **Tech Stack:** GitHub Actions, Docker, `reprepro`, GPG, Debian packaging.
 
@@ -127,7 +127,7 @@ git commit -m "build: adjust Dockerfile for monorepo subdirectory" || echo "No c
 **Files:**
 - Modify: `.github/workflows/apt-repo.yml`
 
-- [ ] **Step 1: Реализовать job `detect-packages`**
+- [ ] **Step 1: Реализовать job `detect-packages` по характеристике `debian/`**
 
 ```yaml
 jobs:
@@ -151,17 +151,27 @@ jobs:
           else
             base_sha="HEAD~1"
           fi
-          packages=$(git diff --name-only "$base_sha" HEAD \
-            | grep '^base/' \
-            | cut -d/ -f2 \
-            | sort -u \
-            | jq -R . \
-            | jq -s -c .)
+
+          echo "Base SHA: $base_sha"
+
+          mapfile -t pkg_dirs < <(git ls-files \
+            | grep -E '/debian/' \
+            | sed 's|/debian/.*||' \
+            | sort -u)
+
+          changed=()
+          for pkg in "${pkg_dirs[@]}"; do
+            if git diff --name-only "$base_sha" HEAD | grep -q "^${pkg}/"; then
+              changed+=("$pkg")
+            fi
+          done
+
+          packages=$(printf '%s\n' "${changed[@]}" | jq -R . | jq -s -c .)
           echo "packages=$packages" >> "$GITHUB_OUTPUT"
           echo "Detected packages: $packages"
 ```
 
-- [ ] **Step 2: Реализовать job `build-packages` с matrix**
+- [ ] **Step 2: Реализовать job `build-packages` с matrix по полным путям**
 
 ```yaml
   build-packages:
@@ -178,30 +188,40 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Compute package slug
+        id: slug
+        run: |
+          slug=$(echo "${{ matrix.package }}" | tr '/' '-')
+          echo "slug=$slug" >> "$GITHUB_OUTPUT"
+          echo "Package path: ${{ matrix.package }}, slug: $slug"
+
       - name: Read package version
         id: version
         run: |
-          version=$(head -1 "base/${{ matrix.package }}/debian/changelog" | grep -oP '\(\K[^)]+')
+          version=$(head -1 "${{ matrix.package }}/debian/changelog" | grep -oP '\(\K[^)]+')
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Package: ${{ matrix.package }}, version: $version"
 
       - name: Build Debian package
-        run: docker build -t "${{ matrix.package }}-deb" "base/${{ matrix.package }}"
+        run: docker build -t "pkg-${{ steps.slug.outputs.slug }}" "${{ matrix.package }}"
 
       - name: Extract .deb from image
         run: |
-          cid=$(docker create "${{ matrix.package }}-deb")
+          cid=$(docker create "pkg-${{ steps.slug.outputs.slug }}")
           docker cp "$cid:/out" ./out
           docker rm "$cid"
-          mv ./out/*.deb ./
+          find ./out -maxdepth 1 -name '*.deb' -exec mv -t . {} +
           rm -rf ./out
-          ls -lh *.deb
+          echo "${{ matrix.package }}" > package-path.txt
+          ls -lh ./*.deb
 
       - name: Upload .deb artifact
         uses: actions/upload-artifact@v4
         with:
-          name: deb-${{ matrix.package }}
-          path: "*.deb"
+          name: deb-${{ steps.slug.outputs.slug }}
+          path: |
+            ./*.deb
+            package-path.txt
 ```
 
 - [ ] **Step 3: Реализовать job `publish-repo`**
@@ -214,7 +234,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout
+      - name: Checkout source
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -261,6 +281,10 @@ jobs:
           if [ -n "$APT_GPG_PASSPHRASE" ]; then
             KEYGRIP=$(gpg --list-secret-keys --with-colons | awk -F: '/^grp/ {print $10; exit}')
             PRESET=$(command -v gpg-preset-passphrase || find /usr/lib -name gpg-preset-passphrase 2>/dev/null | head -1)
+            if [ -z "$PRESET" ]; then
+              echo "gpg-preset-passphrase not found" >&2
+              exit 1
+            fi
             "$PRESET" --preset --passphrase "$APT_GPG_PASSPHRASE" "$KEYGRIP"
           fi
 
@@ -286,18 +310,22 @@ jobs:
           EOF
           gpg --export "${{ env.KEY_ID }}" > repo/KEY.gpg
 
-      - name: Verify and publish packages
+      - name: Publish packages
         run: |
           for pkg_dir in ./artifacts/deb-*; do
-            pkg=$(basename "$pkg_dir" | sed 's/^deb-//')
-            version=$(head -1 "base/$pkg/debian/changelog" | grep -oP '\(\K[^)]+')
-            echo "Publishing $pkg version $version"
-            existing=$(reprepro -b repo list stable "$pkg" | grep "${pkg} ${version}" || true)
+            pkg_path=$(cat "$pkg_dir/package-path.txt")
+            deb_file=$(find "$pkg_dir" -maxdepth 1 -name '*.deb' -print -quit)
+            pkg_name=$(dpkg-deb -f "$deb_file" Package)
+            version=$(head -1 "$pkg_path/debian/changelog" | grep -oP '\(\K[^)]+')
+
+            echo "Publishing $pkg_name ($pkg_path) version $version"
+
+            existing=$(reprepro -b repo list stable "$pkg_name" | grep "${pkg_name} ${version}" || true)
             if [ -n "$existing" ]; then
-              echo "::error::Version ${version} of ${pkg} already exists in APT repository."
+              echo "::error::Version ${version} of ${pkg_name} already exists in APT repository."
               exit 1
             fi
-            deb_file=$(find "$pkg_dir" -maxdepth 1 -name "${pkg}_*.deb" -print -quit)
+
             reprepro -b repo includedeb stable "$deb_file"
           done
 
@@ -435,7 +463,7 @@ git push origin feature/apt-repo-ci
 - [ ] **Step 3: После мержа — проверить запуск workflow на push main**
 
 Open GitHub Actions tab and confirm:
-- `detect-packages` finds `ratatui-todo-list`;
+- `detect-packages` finds `base/ratatui-todo-list`;
 - `build-packages` builds successfully;
 - `publish-repo` publishes to `gh-pages`.
 
@@ -445,10 +473,10 @@ Open GitHub Actions tab and confirm:
 
 | Spec Requirement | Implementing Task |
 |---|---|
-| Структура `base/<package>/` | Task 1 |
+| Пакеты распознаются по наличию `debian/` | Task 3 |
 | Корень содержит только `.github`, `.gitignore`, `README.md` | Task 1, 4 |
 | Общий workflow | Task 3 |
-| Определение изменённых пакетов | Task 3 |
+| Определение изменённых пакетов по `git diff` | Task 3 |
 | Сборка в Docker из поддиректории | Task 2, 3 |
 | Публикация только на push main | Task 3 |
 | PR build без публикации | Task 3 |

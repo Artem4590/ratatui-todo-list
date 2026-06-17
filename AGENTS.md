@@ -170,13 +170,14 @@ cargo test
   - Ручной запуск (`workflow_dispatch`)
 - **Job `detect-packages`:**
   - Сравнивает текущий коммит с базовым (`github.event.before` для push, base SHA для PR).
-  - Находит изменённые папки в `base/`.
-  - Формирует JSON-матрицу пакетов для сборки.
+  - Находит все пакеты через `git ls-files | grep '/debian/'` — то есть только среди отслеживаемых git файлов.
+  - Для каждой директории проверяет, изменились ли файлы внутри неё.
+  - Формирует JSON-матрицу из полных путей к изменённым пакетам.
 - **Job `build-packages`:**
   - Запускается на `ubuntu-latest`.
-  - Matrix по изменённым пакетам.
-  - Собирает Docker-образ `base/<package>/Dockerfile`.
-  - Извлекает `.deb` и загружает артефакт `deb-<package>`.
+  - Matrix по путям изменённых пакетов.
+  - Собирает Docker-образ `<package-path>/Dockerfile`.
+  - Извлекает `.deb`, сохраняет исходный путь пакета в `package-path.txt` и загружает артефакт `deb-<slug>`.
 - **Job `publish-repo` (только push в `main`):**
   - Скачивает все артефакты.
   - Устанавливает `reprepro` и `gnupg`.
@@ -185,7 +186,7 @@ cargo test
   - Чекаутит ветку `gh-pages` в папку `repo`.
   - Создаёт `repo/conf/distributions` для `reprepro`.
   - Экспортирует публичный ключ в `repo/KEY.gpg`.
-  - Для каждого пакета читает версию из `base/<package>/debian/changelog`.
+  - Для каждого артефакта читает исходный путь из `package-path.txt`, имя пакета из `.deb` и версию из `<package-path>/debian/changelog`.
   - Проверяет, что версия пакета ещё не опубликована.
   - Последовательно добавляет пакеты в APT-репозиторий и пушит изменения в `gh-pages`.
 
