@@ -2,18 +2,37 @@
 
 Terminal todo-list application built with [ratatui](https://github.com/ratatui/ratatui).
 
+This repository is an experimental **monorepo** for packaging Rust CLI/TUI tools into a shared APT repository. The application source and Debian packaging live under `base/ratatui-todo-list/`.
+
+## Repository layout
+
+```text
+.
+├── .github/workflows/apt-repo.yml   # CI/CD for the shared APT repository
+├── README.md
+└── base/
+    └── ratatui-todo-list/           # application source and Debian packaging
+        ├── Cargo.toml
+        ├── src/
+        ├── debian/
+        └── Dockerfile
+```
+
 ## Install from APT repository
 
 ### 1. Add the signing key
 
 ```bash
-sudo wget -qO /usr/share/keyrings/ratatui-todo-list.gpg https://Artem4590.github.io/ratatui-todo-list/KEY.gpg
+sudo wget -qO /usr/share/keyrings/ratatui-todo-list.gpg \
+  https://Artem4590.github.io/ratatui-todo-list/KEY.gpg
 ```
 
 ### 2. Add the repository
 
 ```bash
-echo "deb [signed-by=/usr/share/keyrings/ratatui-todo-list.gpg] https://Artem4590.github.io/ratatui-todo-list stable main" | sudo tee /etc/apt/sources.list.d/ratatui-todo-list.list
+echo "deb [signed-by=/usr/share/keyrings/ratatui-todo-list.gpg] \
+  https://Artem4590.github.io/ratatui-todo-list stable main" | \
+  sudo tee /etc/apt/sources.list.d/ratatui-todo-list.list
 ```
 
 ### 3. Install
@@ -26,8 +45,16 @@ sudo apt install ratatui-todo-list
 ## Build from source
 
 ```bash
+cd base/ratatui-todo-list
 cargo build --release
 ./target/release/ratatui-todo-list
+```
+
+## Build the Debian package locally
+
+```bash
+cd base/ratatui-todo-list
+docker build -t ratatui-todo-list-deb .
 ```
 
 ## Maintainer setup
@@ -86,7 +113,7 @@ git push origin gh-pages
 
 ### Add GitHub Secrets
 
-Go to **Settings → Secrets and variables → Actions → New repository secret** and add three secrets:
+Go to **Settings → Secrets and variables → Actions → New repository secret** and add:
 
 | Secret | Value |
 |---|---|
@@ -94,16 +121,27 @@ Go to **Settings → Secrets and variables → Actions → New repository secret
 | `APT_GPG_KEY_ID` | The key ID from step 2, e.g. `ABCDEF1234567890`. |
 | `APT_GPG_PASSPHRASE` | The passphrase you entered during key generation. **Skip this secret if the key has no passphrase.** |
 
-### Trigger a release
+### Publish a new version
 
-Push a tag:
+1. Bump the Debian version in `base/ratatui-todo-list/debian/changelog`. For example, add a new top entry:
 
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-```
+   ```text
+   ratatui-todo-list (0.2.0-3) unstable; urgency=medium
 
-GitHub Actions will build the `.deb` and publish the APT repository to `gh-pages`.
+     * Rebuild against Debian Trixie.
+
+    -- Artem <artem@example.com>  Tue, 16 Jun 2026 15:11:19 +0000
+   ```
+
+2. Commit and push to `main`:
+
+   ```bash
+   git add base/ratatui-todo-list/debian/changelog
+   git commit -m "chore: bump ratatui-todo-list to 0.2.0-3"
+   git push origin main
+   ```
+
+GitHub Actions will detect the changed package, build the `.deb` and publish it to the shared APT repository on `gh-pages`.
 
 ## License
 
