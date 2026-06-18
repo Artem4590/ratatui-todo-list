@@ -4,23 +4,5 @@ Suite: stable
 Codename: stable
 Architectures: amd64
 Components: main
-Description: APT repository for ratatui-todo-list (stable)
-SignWith: CB85182ED0C41F09
-
-Origin: ratatui-todo-list
-Label: ratatui-todo-list
-Suite: testing
-Codename: testing
-Architectures: amd64
-Components: main
-Description: APT repository for ratatui-todo-list (testing)
-SignWith: CB85182ED0C41F09
-
-Origin: ratatui-todo-list
-Label: ratatui-todo-list
-Suite: unstable
-Codename: unstable
-Architectures: amd64
-Components: main
-Description: APT repository for ratatui-todo-list (unstable)
+Description: APT repository for ratatui-todo-list
 SignWith: CB85182ED0C41F09

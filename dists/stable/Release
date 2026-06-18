@@ -2,19 +2,19 @@ Origin: ratatui-todo-list
 Label: ratatui-todo-list
 Suite: stable
 Codename: stable
-Date: Thu, 18 Jun 2026 10:33:07 UTC
+Date: Thu, 18 Jun 2026 14:18:09 UTC
 Architectures: amd64
 Components: main
-Description: APT repository for ratatui-todo-list (stable)
+Description: APT repository for ratatui-todo-list
 MD5Sum:
- 641c7a277faec1fc294d1049c4510309 606 main/binary-amd64/Packages
- 600f3f1ce2781588537f41c15fe6624e 416 main/binary-amd64/Packages.gz
+ 683eb6e884d288553d97cccaa2619de7 606 main/binary-amd64/Packages
+ 616f170748f0c9f13127ca9fcfec40e4 420 main/binary-amd64/Packages.gz
  8a737e2caa0c678e7c8cc5ad7948bf9b 162 main/binary-amd64/Release
 SHA1:
- cdc3dffd006b06d3e3e80fa85a2e4db1397336b5 606 main/binary-amd64/Packages
- 3c9e67cc6c3ac24453f25b3ae8497312d17e3031 416 main/binary-amd64/Packages.gz
+ 77dc2f05a74b371b4d62b893e1c24c070c021b73 606 main/binary-amd64/Packages
+ 58bf7737dec38e9a7a424a7944db6f0c13925a33 420 main/binary-amd64/Packages.gz
  8b6f9da5d603f7df0b1ea3114cbba41e8299474a 162 main/binary-amd64/Release
 SHA256:
- fb93698eb55d73182f13a359e2491c780cd45c2389e1467792bd89a35ea52e34 606 main/binary-amd64/Packages
- de8589237a7ea1a26c0e7023b78228fa97b5d010903e2d3be19c4bc7afb331cc 416 main/binary-amd64/Packages.gz
+ 8bde224356b0356fa058d799630d0a0015fd977db7ae8b2fe4732fc0227b27ae 606 main/binary-amd64/Packages
+ a892a01c2d1aa5f4dfff0d11f00a81b492dfc5471851867bd7be7d61dcd0bbce 420 main/binary-amd64/Packages.gz
  fb42439c798a2af1a822e41ff8163d914e407ada94ba13cb3d2845989be129c5 162 main/binary-amd64/Release
