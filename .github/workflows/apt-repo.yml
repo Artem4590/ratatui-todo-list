@@ -166,6 +166,10 @@ jobs:
           EOF
           gpg --export "${{ env.KEY_ID }}" > repo/KEY.gpg
 
+      - name: Clean vanished distributions
+        run: |
+          reprepro -b repo clearvanished
+
       - name: Publish packages
         run: |
           for pkg_dir in ./artifacts/deb-*; do
