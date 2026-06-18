@@ -222,6 +222,12 @@ jobs:
               exit 1
             fi
 
+            pool_file="repo/pool/main/${pkg_name:0:1}/${pkg_name}/${pkg_name}_${version}_amd64.deb"
+            if [ -f "$pool_file" ] && ! cmp -s "$deb_file" "$pool_file"; then
+              echo "::error::Version ${version} of ${pkg_name} already exists in pool with different content. Bump the Debian version to publish a new build." >&2
+              exit 1
+            fi
+
             reprepro -b repo includedeb "$dist" "$deb_file"
           done
 
