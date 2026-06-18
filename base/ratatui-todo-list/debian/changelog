@@ -1,3 +1,9 @@
+ratatui-todo-list (0.1.0-1) stable; urgency=medium
+
+  * Srable release.
+
+ -- Artem <artem@example.com>  Tue, 16 Jun 2026 15:11:19 +0000
+
 ratatui-todo-list (0.3.0-1) unstable; urgency=medium
 
   * Bump version.

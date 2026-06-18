@@ -174,7 +174,25 @@ jobs:
           Codename: stable
           Architectures: amd64
           Components: main
-          Description: APT repository for ratatui-todo-list
+          Description: APT repository for ratatui-todo-list (stable)
+          SignWith: ${{ env.KEY_ID }}
+
+          Origin: ratatui-todo-list
+          Label: ratatui-todo-list
+          Suite: testing
+          Codename: testing
+          Architectures: amd64
+          Components: main
+          Description: APT repository for ratatui-todo-list (testing)
+          SignWith: ${{ env.KEY_ID }}
+
+          Origin: ratatui-todo-list
+          Label: ratatui-todo-list
+          Suite: unstable
+          Codename: unstable
+          Architectures: amd64
+          Components: main
+          Description: APT repository for ratatui-todo-list (unstable)
           SignWith: ${{ env.KEY_ID }}
           EOF
           gpg --export "${{ env.KEY_ID }}" > repo/KEY.gpg
@@ -186,16 +204,25 @@ jobs:
             deb_file=$(find "$pkg_dir" -maxdepth 1 -name '*.deb' -print -quit)
             pkg_name=$(dpkg-deb -f "$deb_file" Package)
             version=$(head -1 "$pkg_path/debian/changelog" | grep -oP '\(\K[^)]+')
+            dist=$(head -1 "$pkg_path/debian/changelog" | grep -oP '\)\s+\K[^;]+')
 
-            echo "Publishing $pkg_name ($pkg_path) version $version"
+            case "$dist" in
+              stable|testing|unstable) ;;
+              *)
+                echo "::error::Unknown distribution '$dist' in $pkg_path/debian/changelog. Allowed: stable, testing, unstable." >&2
+                exit 1
+                ;;
+            esac
 
-            existing=$(reprepro -b repo list stable "$pkg_name" | grep "${pkg_name} ${version}" || true)
+            echo "Publishing $pkg_name ($pkg_path) version $version to $dist"
+
+            existing=$(reprepro -b repo list "$dist" "$pkg_name" | grep "${pkg_name} ${version}" || true)
             if [ -n "$existing" ]; then
-              echo "::error::Version ${version} of ${pkg_name} already exists in APT repository."
+              echo "::error::Version ${version} of ${pkg_name} already exists in ${dist}."
               exit 1
             fi
 
-            reprepro -b repo includedeb stable "$deb_file"
+            reprepro -b repo includedeb "$dist" "$deb_file"
           done
 
       - name: Commit and push gh-pages
