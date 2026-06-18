@@ -1,0 +1,17 @@
+Package: ratatui-todo-list
+Version: 0.1.0-2
+Architecture: amd64
+Maintainer: Artem <artem@example.com>
+Installed-Size: 630
+Depends: libc6 (>= 2.39), libgcc-s1 (>= 4.2)
+Homepage: https://example.com
+Priority: optional
+Section: utils
+Filename: pool/main/r/ratatui-todo-list/ratatui-todo-list_0.1.0-2_amd64.deb
+Size: 242256
+SHA256: 9c609c6a71cc84454a8d3c57fbbecd83cb370ab96d7b34418aee23245023a559
+SHA1: bffdbec7b29b3b8e45a78ab755f44bc75f02ce7c
+MD5sum: 38cc55718a72116af73e5fcb8a84ca48
+Description: Terminal todo-list application built with ratatui
+ A simple terminal UI todo-list using ratatui and crossterm.
+

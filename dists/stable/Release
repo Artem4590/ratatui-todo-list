@@ -1,0 +1,20 @@
+Origin: ratatui-todo-list
+Label: ratatui-todo-list
+Suite: stable
+Codename: stable
+Date: Thu, 18 Jun 2026 10:33:07 UTC
+Architectures: amd64
+Components: main
+Description: APT repository for ratatui-todo-list (stable)
+MD5Sum:
+ 641c7a277faec1fc294d1049c4510309 606 main/binary-amd64/Packages
+ 600f3f1ce2781588537f41c15fe6624e 416 main/binary-amd64/Packages.gz
+ 8a737e2caa0c678e7c8cc5ad7948bf9b 162 main/binary-amd64/Release
+SHA1:
+ cdc3dffd006b06d3e3e80fa85a2e4db1397336b5 606 main/binary-amd64/Packages
+ 3c9e67cc6c3ac24453f25b3ae8497312d17e3031 416 main/binary-amd64/Packages.gz
+ 8b6f9da5d603f7df0b1ea3114cbba41e8299474a 162 main/binary-amd64/Release
+SHA256:
+ fb93698eb55d73182f13a359e2491c780cd45c2389e1467792bd89a35ea52e34 606 main/binary-amd64/Packages
+ de8589237a7ea1a26c0e7023b78228fa97b5d010903e2d3be19c4bc7afb331cc 416 main/binary-amd64/Packages.gz
+ fb42439c798a2af1a822e41ff8163d914e407ada94ba13cb3d2845989be129c5 162 main/binary-amd64/Release

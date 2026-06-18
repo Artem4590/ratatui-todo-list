@@ -1,0 +1,6 @@
+Archive: stable
+Component: main
+Origin: ratatui-todo-list
+Label: ratatui-todo-list
+Architecture: amd64
+Description: APT repository for ratatui-todo-list (stable)
