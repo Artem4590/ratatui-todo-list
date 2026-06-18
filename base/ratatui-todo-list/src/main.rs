@@ -95,6 +95,10 @@ impl Default for App {
                         text: String::from("Hello from v0.2.0"),
                         status: Status::Todo,
                     },
+                    TodoItem {
+                        text: String::from("Test"),
+                        status: Status::Todo,
+                    },
                 ],
             },
             state: ListState::default(),
