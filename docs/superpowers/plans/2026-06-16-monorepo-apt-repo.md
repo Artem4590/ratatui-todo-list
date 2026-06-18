@@ -260,33 +260,14 @@ jobs:
       - name: Import GPG signing key
         env:
           APT_GPG_PRIVATE_KEY: ${{ secrets.APT_GPG_PRIVATE_KEY }}
-          APT_GPG_PASSPHRASE: ${{ secrets.APT_GPG_PASSPHRASE }}
         run: |
           if [ -z "$APT_GPG_PRIVATE_KEY" ]; then
             echo "Error: APT_GPG_PRIVATE_KEY secret is not set" >&2
             exit 1
           fi
-          if [ -n "$APT_GPG_PASSPHRASE" ]; then
-            echo "$APT_GPG_PRIVATE_KEY" | gpg --batch --yes --pinentry-mode loopback --passphrase "$APT_GPG_PASSPHRASE" --import
-          else
-            echo "$APT_GPG_PRIVATE_KEY" | gpg --batch --yes --import
-          fi
+          echo "$APT_GPG_PRIVATE_KEY" | gpg --batch --yes --import
           KEY_ID=$(gpg --list-secret-keys --with-colons | grep '^sec' | head -1 | cut -d: -f5)
           echo "KEY_ID=$KEY_ID" >> "$GITHUB_ENV"
-
-      - name: Cache passphrase for reprepro
-        env:
-          APT_GPG_PASSPHRASE: ${{ secrets.APT_GPG_PASSPHRASE }}
-        run: |
-          if [ -n "$APT_GPG_PASSPHRASE" ]; then
-            KEYGRIP=$(gpg --list-secret-keys --with-colons | awk -F: '/^grp/ {print $10; exit}')
-            PRESET=$(command -v gpg-preset-passphrase || find /usr/lib -name gpg-preset-passphrase 2>/dev/null | head -1)
-            if [ -z "$PRESET" ]; then
-              echo "gpg-preset-passphrase not found" >&2
-              exit 1
-            fi
-            "$PRESET" --preset --passphrase "$APT_GPG_PASSPHRASE" "$KEYGRIP"
-          fi
 
       - name: Checkout gh-pages branch
         uses: actions/checkout@v4

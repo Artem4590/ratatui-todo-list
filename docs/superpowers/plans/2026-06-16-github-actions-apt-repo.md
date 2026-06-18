@@ -126,36 +126,16 @@ git commit -m "ci: add build-deb job for apt repository"
       - name: Import GPG signing key
         env:
           APT_GPG_PRIVATE_KEY: ${{ secrets.APT_GPG_PRIVATE_KEY }}
-          APT_GPG_PASSPHRASE: ${{ secrets.APT_GPG_PASSPHRASE }}
         run: |
           set -e
           if [ -z "$APT_GPG_PRIVATE_KEY" ]; then
             echo "Error: APT_GPG_PRIVATE_KEY secret is not set" >&2
             exit 1
           fi
-          if [ -n "$APT_GPG_PASSPHRASE" ]; then
-            echo "$APT_GPG_PRIVATE_KEY" | gpg --batch --yes --pinentry-mode loopback --passphrase "$APT_GPG_PASSPHRASE" --import
-          else
-            echo "$APT_GPG_PRIVATE_KEY" | gpg --batch --yes --import
-          fi
+          echo "$APT_GPG_PRIVATE_KEY" | gpg --batch --yes --import
           KEY_ID=$(gpg --list-secret-keys --with-colons | grep '^sec' | head -1 | cut -d: -f5)
           echo "KEY_ID=$KEY_ID" >> "$GITHUB_ENV"
           echo "GPG key imported: $KEY_ID"
-
-      - name: Cache passphrase for reprepro (if protected key)
-        env:
-          APT_GPG_PASSPHRASE: ${{ secrets.APT_GPG_PASSPHRASE }}
-        run: |
-          if [ -n "$APT_GPG_PASSPHRASE" ]; then
-            KEYGRIP=$(gpg --list-secret-keys --with-colons | awk -F: '/^grp/ {print $10; exit}')
-            echo "keygrip=$KEYGRIP"
-            PRESET=$(command -v gpg-preset-passphrase || find /usr/lib -name gpg-preset-passphrase 2>/dev/null | head -1)
-            if [ -z "$PRESET" ]; then
-              echo "gpg-preset-passphrase not found; create an unprotected signing key or install gnupg-agent" >&2
-              exit 1
-            fi
-            "$PRESET" --preset --passphrase "$APT_GPG_PASSPHRASE" "$KEYGRIP"
-          fi
 
       - name: Checkout gh-pages branch
         uses: actions/checkout@v4
@@ -286,9 +266,7 @@ gpg --export "$KEYID" > KEY.gpg
 
 Go to **Settings → Secrets and variables → Actions** and add:
 
-- `APT_GPG_PRIVATE_KEY`: full content of `apt-signing-key.asc`.
-- `APT_GPG_KEY_ID`: the GPG key ID (e.g., `A1B2C3D4E5F67890`).
-- `APT_GPG_PASSPHRASE`: (optional) passphrase of the private key.
+- `APT_GPG_PRIVATE_KEY`: full content of `apt-signing-key.asc` (key must have no passphrase).
 
 ### Trigger a release
 
@@ -361,7 +339,7 @@ git push origin main
 Follow the **Maintainer setup** section in README:
 - create `gh-pages` branch,
 - enable Pages from `gh-pages`,
-- add `APT_GPG_PRIVATE_KEY`, `APT_GPG_KEY_ID`, and optional `APT_GPG_PASSPHRASE`.
+- add `APT_GPG_PRIVATE_KEY`.
 
 - [ ] **Step 3: Создать тестовый релиз**
 
@@ -416,7 +394,7 @@ Expected: package installs, binary is at `/usr/bin/ratatui-todo-list`.
 
 ## Type/Name Consistency
 
-- Secret names: `APT_GPG_PRIVATE_KEY`, `APT_GPG_KEY_ID`, `APT_GPG_PASSPHRASE` — единообразно.
+- Secret name: `APT_GPG_PRIVATE_KEY`.
 - Workflow job names: `build-deb`, `update-apt-repo`.
 - Artifact name: `deb-package`.
 - Branch: `gh-pages`.

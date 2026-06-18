@@ -87,7 +87,7 @@
   ```
 - `apt-signing-key.asc` добавляется в GitHub Secret `APT_GPG_PRIVATE_KEY`.
 - `APT_GPG_KEY_ID` добавляется в GitHub Secrets (можно получить через `gpg --list-secret-keys`).
-- (Опционально) `APT_GPG_PASSPHRASE`, если ключ защищён паролем.
+- Ключ используется без passphrase.
 - `KEY.gpg` публикуется в корне `gh-pages` автоматически workflow.
 
 ### 3. reprepro конфигурация
@@ -134,7 +134,7 @@ sudo apt install ratatui-todo-list
 ## Ограничения
 
 - GitHub Pages имеет лимит ~1 GB на репозиторий; для небольшого `.deb` (~240 KB) это несущественно.
-- GPG-ключ с паролем требует дополнительной настройки `gpg --batch --pinentry-mode loopback` в workflow.
+- GPG-ключ используется без passphrase.
 - Workflow требует предварительной настройки secrets вручную.
 
 ## Критерии успеха

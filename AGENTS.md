@@ -182,7 +182,6 @@ cargo test
   - Скачивает все артефакты.
   - Устанавливает `reprepro` и `gnupg`.
   - Импортирует GPG-ключ из секрета `APT_GPG_PRIVATE_KEY`.
-  - Опционально кэширует пароль из секрета `APT_GPG_PASSPHRASE`.
   - Чекаутит ветку `gh-pages` в папку `repo`.
   - Создаёт `repo/conf/distributions` для `reprepro`.
   - Экспортирует публичный ключ в `repo/KEY.gpg`.
@@ -194,8 +193,7 @@ cargo test
 
 | Секрет | Назначение |
 |--------|------------|
-| `APT_GPG_PRIVATE_KEY` | Приватный GPG-ключ для подписи репозитория |
-| `APT_GPG_PASSPHRASE` | Пароль ключа (опционально) |
+| `APT_GPG_PRIVATE_KEY` | Приватный GPG-ключ для подписи репозитория (без passphrase) |
 | `GITHUB_TOKEN` | Стандартный токен GitHub Actions для пуша в `gh-pages` |
 
 ### Публикация APT-репозитория
@@ -230,8 +228,7 @@ cargo test
 
 ## Безопасность
 
-- **GPG-ключ:** приватная часть хранится только в GitHub Secrets. Публичная часть автоматически публикуется как `KEY.gpg` в `gh-pages`.
-- **Пароль ключа:** опционален; если задан `APT_GPG_PASSPHRASE`, workflow использует `gpg-preset-passphrase` и loopback pinentry.
+- **GPG-ключ:** приватная часть хранится только в GitHub Secrets. Публичная часть автоматически публикуется как `KEY.gpg` в `gh-pages`. Ключ не должен иметь passphrase.
 - **Dockerfile:** устанавливает Rust через официальный скрипт `rustup`; образ основан на `debian:trixie-slim`.
 - **Ввод пользователя:** текст задач вводится без валидации и фильтрации управляющих символов (кроме `Esc`). Это локальное TUI-приложение, но если в будущем появится сохранение в файл, стоит проверять данные.
 - **Права:** workflow job `publish-repo` запрашивает `permissions: contents: write` для пуша в `gh-pages`.

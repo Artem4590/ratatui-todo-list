@@ -3,10 +3,3 @@ ratatui-todo-list (0.1.0-2) stable; urgency=medium
   * Initial release.
 
  -- Artem <artem@example.com>  Tue, 16 Jun 2026 12:21:13 +0000
-
-
-ratatui-todo-list (0.1.0-2) unstable; urgency=medium
-
-  * Initial release.
-
- -- Artem <artem@example.com>  Tue, 16 Jun 2026 12:21:13 +0000

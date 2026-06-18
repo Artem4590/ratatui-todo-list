@@ -87,7 +87,7 @@ git push origin gh-pages
    - keysize: `4096`
    - expiration: `0` (or your preferred value)
    - name/email: any value, e.g. `ratatui-todo-list APT signing`
-   - passphrase: **leave empty** for CI, or set one and use `APT_GPG_PASSPHRASE` below
+   - passphrase: **leave empty** (the CI key must not have a passphrase)
 
 2. Find the key ID:
 
@@ -118,15 +118,13 @@ Go to **Settings → Secrets and variables → Actions → New repository secret
 | Secret | Value |
 |---|---|
 | `APT_GPG_PRIVATE_KEY` | Copy-paste the **entire** content of `apt-signing-key.asc` (including `-----BEGIN PGP PRIVATE KEY BLOCK-----` and `-----END ...`). |
-| `APT_GPG_KEY_ID` | The key ID from step 2, e.g. `ABCDEF1234567890`. |
-| `APT_GPG_PASSPHRASE` | The passphrase you entered during key generation. **Skip this secret if the key has no passphrase.** |
 
 ### Publish a new version
 
 1. Bump the Debian version in `base/ratatui-todo-list/debian/changelog`. For example, add a new top entry:
 
    ```text
-   ratatui-todo-list (0.2.0-3) unstable; urgency=medium
+   ratatui-todo-list (0.2.0-3) stable; urgency=medium
 
      * Rebuild against Debian Trixie.
 
