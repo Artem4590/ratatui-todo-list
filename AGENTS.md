@@ -218,7 +218,7 @@ cargo test
 Файлы расположены в `base/ratatui-todo-list/debian/`:
 
 - `debian/control` — описание пакета, зависимости сборки/установки.
-- `debian/changelog` — история версий (`0.1.0-1`, `0.2.0-1`, `0.2.0-2`).
+- `debian/changelog` — история версий (`0.1.0-2`, `0.1.0-3`).
 - `debian/rules` — переопределения для `dh`:
   - `override_dh_auto_build`: `cargo build --release`
   - `override_dh_auto_install`: копирует бинарник в `debian/ratatui-todo-list/usr/bin/`
